@@ -1,0 +1,22 @@
+# matches inbound requests to an upstream inference provider
+apiVersion: aigateway.envoyproxy.io/v1beta1
+kind: AIGatewayRoute
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: platform-agent-router-gateway
+      namespace: platform-agent-router
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      sectionName: https
+  rules:
+    - matches:
+        - headers:
+            - type: Exact
+              name: x-ai-eg-model
+              value: podplane-workshop-example-model
+      backendRefs:
+        - name: {{ .Release.Name }}
+          modelNameOverride: {{ required "model is required" .Values.model | quote }}

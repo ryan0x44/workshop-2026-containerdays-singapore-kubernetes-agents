@@ -1,0 +1,16 @@
+{
+  "providers": {
+    "workshop": {
+      "baseUrl": "ROUTER_URL/v1",
+      "api": "openai-completions",
+      "apiKey": "unused",
+      "models": [
+        {
+          "id": "gpt-4o-mini",
+          "contextWindow": 128000,
+          "maxTokens": 4096
+        }
+      ]
+    }
+  }
+}

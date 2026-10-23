@@ -1,0 +1,6 @@
+schema: OpenAI
+hostname: host.podplane.internal
+port: 8000
+tls: false
+# Set this to a model served by your local inference server.
+# model: mtplx-mimo-v26-qwen-9b-optimized-speed

@@ -1,0 +1,6 @@
+schema: OpenAI
+hostname: api.openai.com
+port: 443
+tls: true
+# Set this to a model your API account can access.
+# model: gpt-4o-mini

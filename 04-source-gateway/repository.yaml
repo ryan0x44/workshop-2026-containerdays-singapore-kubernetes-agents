@@ -1,0 +1,17 @@
+# GitHub access is anonymous; Source Gateway access still requires the identity below.
+apiVersion: sourcegateway.dev/v1alpha1
+kind: GitRepository
+metadata:
+  name: hello-world
+  namespace: workshop
+spec:
+  upstream:
+    url: https://github.com/octocat/Hello-World.git
+  mirror:
+    refreshInterval: 5m
+    maxStaleness: 1h
+  authorization:
+    rules:
+      - name: pi-read
+        operations: [git.read]
+        allow: 'sa.namespace == "workshop" && sa.name == "pi"'

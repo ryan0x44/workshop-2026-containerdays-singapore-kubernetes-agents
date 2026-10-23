@@ -1,0 +1,11 @@
+# defines the upstream inference endpoint
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - fqdn:
+        hostname: {{ required "hostname is required" .Values.hostname | quote }}
+        port: {{ .Values.port }}

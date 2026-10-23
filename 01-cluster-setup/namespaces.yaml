@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workshop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workshop-inference
+  labels:
+    # Lets this namespace attach routes to Agent Router (cluster admins only).
+    agent-router.podplane.dev/routes: allowed

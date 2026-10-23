@@ -1,0 +1,16 @@
+{
+  "providers": {
+    "workshop": {
+      "baseUrl": "ROUTER_URL/anthropic",
+      "api": "anthropic-messages",
+      "apiKey": "unused",
+      "models": [
+        {
+          "id": "claude-sonnet-4-5",
+          "contextWindow": 200000,
+          "maxTokens": 4096
+        }
+      ]
+    }
+  }
+}

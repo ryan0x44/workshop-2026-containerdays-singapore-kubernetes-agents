@@ -1,0 +1,12 @@
+# For Anthropic, first edit the pi-models ConfigMap in ../02-agent-sandbox/sandbox.yaml:
+# set api to "anthropic-messages" and baseUrl to
+# "https://platform-agent-router-gateway.platform-agent-router.svc/anthropic".
+# Reapply sandbox.yaml, delete the old Pod, wait for the mounted config to refresh,
+# then restart Pi. Switch back to api "openai-completions" and baseUrl ending in /v1 
+# for OpenAI/local.
+schema: Anthropic
+hostname: api.anthropic.com
+port: 443
+tls: true
+# Set this to a model your API account can access.
+# model: claude-sonnet-4-5

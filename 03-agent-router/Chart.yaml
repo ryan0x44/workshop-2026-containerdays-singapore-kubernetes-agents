@@ -1,0 +1,5 @@
+apiVersion: v2
+name: workshop-inference
+description: Connect the workshop sandbox to an inference provider through Agent Router.
+type: application
+version: 0.1.0

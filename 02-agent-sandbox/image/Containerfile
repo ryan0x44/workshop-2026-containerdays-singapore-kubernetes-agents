@@ -1,0 +1,21 @@
+# we use this base image as it's already cached by Podplane
+FROM golang:1.26.2-trixie
+
+# Preserve base users/groups and name the container UID/GID 1000 without a RUN
+COPY passwd group /etc/
+
+ARG TARGETARCH
+COPY pi/ /opt/pi/
+COPY --chmod=755 ${TARGETARCH}/ /usr/local/bin/
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY path.sh /etc/profile.d/path.sh
+
+ENV PI_PACKAGE_DIR=/opt/pi
+ENV HOME=/home/agent
+ENV TERM=xterm-256color
+ENV PI_OFFLINE=1
+ENV PI_TELEMETRY=0
+
+WORKDIR /workspace
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

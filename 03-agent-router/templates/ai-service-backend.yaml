@@ -1,0 +1,13 @@
+# represents each upstream inference provider
+apiVersion: aigateway.envoyproxy.io/v1beta1
+kind: AIServiceBackend
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  schema:
+    name: {{ required "Choose a provider with -f anthropic.yaml or -f openai.yaml" .Values.schema | quote }}
+  backendRef:
+    name: {{ .Release.Name }}
+    group: gateway.envoyproxy.io
+    kind: Backend

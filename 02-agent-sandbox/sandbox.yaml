@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pi
+  namespace: workshop
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pi-models
+  namespace: workshop
+data:
+  models.json: |
+    {
+      "providers": {
+        "podplane": {
+          // Use Agent Router's OpenAI-compatible endpoint; Pi appends /chat/completions.
+          "baseUrl": "https://platform-agent-router-gateway.platform-agent-router.svc/v1",
+          // for Anthropic, use:
+          // "baseUrl": "https://platform-agent-router-gateway.platform-agent-router.svc/anthropic",
+          "apiKey": "unused",
+          "api": "openai-completions",
+          // for Anthropic, use:
+          // "api": "anthropic-messages",
+          "authHeader": false,
+          "models": [
+            {
+              "id": "podplane-workshop-example-model",
+              "name": "Podplane Workshop Example Model Configued In Agent Router",
+              "reasoning": false,
+              "input": ["text", "image"],
+              "contextWindow": 128000,
+              "maxTokens": 4096
+            }
+          ]
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pi-workspace
+  namespace: workshop
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: agents.x-k8s.io/v1beta1
+kind: Sandbox
+metadata:
+  name: pi
+  namespace: workshop
+spec:
+  podTemplate:
+    metadata:
+      labels:
+        app: workshop-pi
+        app.kubernetes.io/instance: pi
+    spec:
+      runtimeClassName: gvisor
+      serviceAccountName: pi
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pi
+          image: default-registry.local/apps/workshop-pi:v1
+          # if we re-run podplane build, Always here means a Pod deletion/reschedule pulls the latest image build
+          imagePullPolicy: Always
+          workingDir: /workspace
+          env:
+            # Pi trusts Agent Router's HTTPS certificate via the workload CA bundle.
+            - name: NODE_EXTRA_CA_CERTS
+              value: /var/run/podplane/trust/ca.crt
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: home
+              mountPath: /home/agent
+            - name: tmp
+              mountPath: /tmp
+            - name: models
+              mountPath: /etc/pi
+              readOnly: true
+            - name: source-token
+              mountPath: /var/run/sourcegateway
+              readOnly: true
+            - name: workload-trust
+              mountPath: /var/run/podplane/trust
+              readOnly: true
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: pi-workspace
+        - name: home
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: models
+          configMap:
+            name: pi-models
+        - name: source-token
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: sourcegateway.dev
+                  expirationSeconds: 3600
+        - name: workload-trust
+          projected:
+            sources:
+              - clusterTrustBundle:
+                  name: certificates.podplane.dev:workload:roots
+                  path: ca.crt
