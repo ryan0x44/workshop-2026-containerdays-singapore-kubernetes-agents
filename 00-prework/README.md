@@ -84,6 +84,17 @@ Import verifies checksums and copies dependencies into Podplane's local cache, w
 
 ```sh
 podplane deps import "$PODPLANE_BUNDLE"
+```
+
+**On macOS**, set a keyring password before starting to work around a macOS Keychain bug. Replace the placeholder with your own secret and reuse the same value in each new terminal:
+
+```sh
+export PODPLANE_KEYRING_PASS='replace-with-your-own-secret'
+```
+
+Start the cluster:
+
+```sh
 podplane local start --offline --memory 5G
 ```
 

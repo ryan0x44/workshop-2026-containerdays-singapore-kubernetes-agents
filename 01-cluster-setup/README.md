@@ -16,6 +16,12 @@ go install github.com/podplane/podplane@latest
 
 ## 2. Start your cluster
 
+**On macOS**, set a keyring password before starting to work around a macOS Keychain bug. Replace the placeholder with your own secret and reuse the same value in each new terminal:
+
+```sh
+export PODPLANE_KEYRING_PASS='replace-with-your-own-secret'
+```
+
 To start a cluster and automatically configure a `local` kubeconfig context:
 
 ```sh
