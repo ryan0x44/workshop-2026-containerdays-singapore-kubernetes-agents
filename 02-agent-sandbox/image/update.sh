@@ -1,5 +1,5 @@
 #!/bin/sh
-# Refresh the vendored Linux Pi distribution, ripgrep and fd (find alternative) for both architectures.
+# Refresh Pi, ripgrep, fd and the pinned nono release for both Linux architectures.
 set -eu
 cd "$(dirname "$0")"
 
@@ -19,6 +19,8 @@ echo "Resolving latest releases..."
 pi_tag=$(latest_tag earendil-works/pi)
 rg_tag=$(latest_tag BurntSushi/ripgrep)
 fd_tag=$(latest_tag sharkdp/fd)
+# Keep the workshop profile and compatibility checks tied to this release.
+nono_tag=v0.80.0
 
 rm -rf amd64 arm64 pi
 for arch in amd64 arm64; do
@@ -27,11 +29,15 @@ for arch in amd64 arm64; do
             pi_arch=x64
             rg_target=x86_64-unknown-linux-musl
             fd_target=x86_64-unknown-linux-musl
+            nono_target=x86_64-unknown-linux-gnu
+            nono_sha256=6da665b61999570c10dffc7da78828fe1fb7f3cac53319e505cebecaef17037f
             ;;
         arm64)
             pi_arch=arm64
             rg_target=aarch64-unknown-linux-gnu
             fd_target=aarch64-unknown-linux-musl
+            nono_target=aarch64-unknown-linux-gnu
+            nono_sha256=d2a24c8c37714f85c829b5586ffd81fc2acf336c95372d881ba62140884f22cb
             ;;
     esac
     mkdir -p "$arch"
@@ -51,5 +57,14 @@ for arch in amd64 arm64; do
     echo "Downloading fd $fd_tag for linux/$arch..."
     curl -fL --progress-bar --retry 3 -o "$archive" "https://github.com/sharkdp/fd/releases/download/$fd_tag/fd-$fd_tag-$fd_target.tar.gz"
     tar -xzf "$archive" -C "$arch" --strip-components=1 "fd-$fd_tag-$fd_target/fd"
+
+    echo "Downloading nono $nono_tag for linux/$arch..."
+    curl -fL --progress-bar --retry 3 -o "$archive" "https://github.com/nolabs-ai/nono/releases/download/$nono_tag/nono-$nono_tag-$nono_target.tar.gz"
+    if command -v sha256sum >/dev/null 2>&1; then
+        printf '%s  %s\n' "$nono_sha256" "$archive" | sha256sum -c -
+    else
+        printf '%s  %s\n' "$nono_sha256" "$archive" | shasum -a 256 -c -
+    fi
+    tar -xzf "$archive" -C "$arch" nono
 done
-echo "Done: Pi, ripgrep and fd updated for linux/amd64 and linux/arm64."
+echo "Done: Pi, ripgrep, fd and nono updated for linux/amd64 and linux/arm64."

@@ -8,7 +8,7 @@ Podplane makes it easy to build your own container images, and (via [ocimage](ht
 
 This workshop directory tree includes the necessary files to build a [Pi](https://pi.dev) agent harness image
 
-The image contains Pi, Git, curl, ripgrep (`rg`), and fd. To build it, run:
+The image contains Pi, Go, Git, curl, ripgrep (`rg`), fd, and nono 0.80.0. nono is preinstalled for Part 5; it does not wrap Pi in this part. To build it, run:
 
 ```sh
 podplane build --docker=false -t workshop-pi:v1 ./image
@@ -45,6 +45,7 @@ This schedules a Pod:
 - dedicated projected token is for Source Gateway in Part 4, not the Kubernetes API.
 - no provider key is mounted.
 - workload `TrustBundle` lets Git verify the gateway's certificate.
+- workload certificate and private key are mounted for Part 5; ordinary Pi can read them but does not use them for inference yet.
 - with Pi's `models.json` supplied via `pi-models` ConfigMap in `sandbox.yaml`
 
 ## 3. Access Pi CLI
@@ -64,6 +65,7 @@ pwd # expect: /workspace
 pi --version
 rg --version
 fd --version
+nono --version # installed now; enabled in Part 5
 # prove no service account token exists:
 test ! -e /var/run/secrets/kubernetes.io/serviceaccount/token && echo 'No default API token'
 # prove egress is restricted:

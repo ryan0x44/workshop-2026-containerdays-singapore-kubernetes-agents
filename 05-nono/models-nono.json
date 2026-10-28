@@ -1,0 +1,20 @@
+{
+  "providers": {
+    "podplane": {
+      "baseUrl": "http://127.0.0.1:18080/router/v1",
+      "apiKey": "${ROUTER_TOKEN}",
+      "api": "openai-completions",
+      "authHeader": true,
+      "models": [
+        {
+          "id": "podplane-workshop-example-model",
+          "name": "Podplane Workshop Model via nono",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "contextWindow": 128000,
+          "maxTokens": 4096
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "meta": { "name": "workshop-pi" },
+  "filesystem": {
+    "read": ["/opt/pi", "/usr/local/go", "/etc/pi", "/var/run/podplane/trust"],
+    "allow": ["/workspace", "/home/agent/.pi/agent-nono", "/home/agent/.cache/go-build", "/tmp"],
+    "deny": ["/var/run/podplane/identity", "/var/run/sourcegateway"]
+  },
+  "environment": {
+    "set_vars": {
+      "PI_CODING_AGENT_DIR": "/home/agent/.pi/agent-nono",
+      "GOCACHE": "/home/agent/.cache/go-build",
+      "GOTELEMETRY": "off"
+    }
+  },
+  "network": {
+    "credentials": ["router"],
+    "custom_credentials": {
+      "router": {
+        "upstream": "https://platform-agent-router-gateway.platform-agent-router.svc",
+        "credential_key": "env://ROUTER_PLACEHOLDER",
+        "env_var": "ROUTER_TOKEN",
+        "tls_ca": "/var/run/podplane/trust/ca.crt",
+        "tls_client_cert": "/var/run/podplane/identity/tls.crt",
+        "tls_client_key": "/var/run/podplane/identity/tls.key",
+        "endpoint_rules": [
+          { "method": "POST", "path": "/v1/chat/completions" }
+        ]
+      }
+    }
+  }
+}

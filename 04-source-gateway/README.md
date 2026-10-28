@@ -71,4 +71,4 @@ Use a disposable repository you own and a read-only, repository-limited credenti
 
 ---
 
-[← Previous: agent router](../03-agent-router/) · [Next: wrap-up and cleanup →](../README.md#after-the-workshop)
+[← Previous: agent router](../03-agent-router/) · [Next: wrap Pi with nono →](../05-nono/)

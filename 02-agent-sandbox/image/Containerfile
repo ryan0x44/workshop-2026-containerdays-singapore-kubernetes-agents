@@ -9,12 +9,17 @@ COPY pi/ /opt/pi/
 COPY --chmod=755 ${TARGETARCH}/ /usr/local/bin/
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY path.sh /etc/profile.d/path.sh
+COPY nono.json /etc/nono/pi.json
 
 ENV PI_PACKAGE_DIR=/opt/pi
 ENV HOME=/home/agent
 ENV TERM=xterm-256color
 ENV PI_OFFLINE=1
 ENV PI_TELEMETRY=0
+ENV NONO_PROFILE=/etc/nono/pi.json
+# nono requires a header credential route even when upstream auth uses mTLS.
+# This is a public placeholder, never a provider API key.
+ENV ROUTER_PLACEHOLDER=unused
 
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -22,7 +22,7 @@ This will download 2GiB+ of dependencies, and should allow you to start a Podpla
 
 ## Workshop Contents
 
-There are **four** parts to this workshop. Work through them in order; each builds on the previous part. Commands run on your laptop unless labelled **inside the sandbox**.
+There are **five** parts to this workshop. Work through them in order; each builds on the previous part. Commands run on your laptop unless labelled **inside the sandbox**.
 
 | Part | You will… |
 | --- | --- |
@@ -30,6 +30,7 @@ There are **four** parts to this workshop. Work through them in order; each buil
 | [2. Agent Sandbox](02-agent-sandbox/) | Schedule an isolated workspace and open Pi coding agent. |
 | [3. Agent Router](03-agent-router/) | Connect OpenAI API-compatible inference to Pi via Agent Router. |
 | [4. Source Gateway](04-source-gateway/) | Cache a public Git repository and clone it into the sandbox. |
+| [5. Wrap Pi with nono](05-nono/) | Restrict Pi's process and authenticate inference with a workload client certificate. |
 
 ### Install Podplane and its tools
 
@@ -52,7 +53,7 @@ Install the same tools required for a Podplane local cluster:
 - **QEMU** — run the local cluster VM; include `qemu-img` and the system binary for your architecture.
 - **mkcert** — generate local HTTPS certificates. Optionally run `mkcert -install` to trust them on your laptop.
 
-This workshop also needs **Git LFS** to download the prebuilt Pi, ripgrep and fd binaries stored in this repository. On macOS:
+This workshop also needs **Git LFS** to download the prebuilt Pi, ripgrep, fd and nono binaries stored in this repository. On macOS:
 
 ```sh
 brew install kubectl helm qemu mkcert git-lfs
@@ -61,7 +62,7 @@ git lfs install
 
 On Linux, follow [Podplane's installation guide](https://podplane.dev/docs/guides/installation/) and [Git LFS installation instructions](https://git-lfs.com/), then run `git lfs install` before cloning. Make sure QEMU can access KVM. If you already cloned without Git LFS, run `git lfs pull` in the repository to fetch the binaries.
 
-**No Docker, Buildx, npm install or local build toolchain is needed:** Podplane's native ocimage builder packages prebuilt Linux binaries. Only maintainers refreshing those binaries with `image/update.sh` need `curl` and `tar`.
+**No Docker, Buildx, npm install or local build toolchain is needed:** Podplane's native ocimage builder packages prebuilt Linux binaries. Only maintainers refreshing those binaries with `image/update.sh` need `curl`, `tar` and `sha256sum` or `shasum`.
 
 Check the tools and download Podplane's dependencies before arriving:
 
@@ -80,13 +81,13 @@ podplane deps download
 ```sh
 git clone https://github.com/ryan0x44/workshop-2026-containerdays-singapore-kubernetes-agents.git
 cd workshop-2026-containerdays-singapore-kubernetes-agents
-sh ./02-agent-sandbox/image/prepare.sh
+git lfs pull
 podplane build --docker=false -t workshop-pi:v1 ./02-agent-sandbox/image
 ```
 
-Complete this **before** the eight-minute exercises: the full Node base is a large download. The script selects Linux arm64 on Apple silicon or Linux amd64 on x86-64, verifies pinned SHA256 checksums, and extracts Pi `1.4.0` (the entire standalone distribution), ripgrep `14.1.1` and fd `10.5.0`. Repeating it skips an already prepared target; delete `02-agent-sandbox/image/prepared/` to force a fresh download. Downloaded artifacts are Git-ignored. Nothing is downloaded at sandbox startup.
+Complete this **before** the exercises: the base image is a large download. The build selects the vendored Linux arm64 binaries on Apple silicon or amd64 on x86-64. Pi's runtime resources and nono's workshop profile are included in the image. nono is pinned to `0.80.0`; `image/update.sh` verifies its release archives against pinned SHA256 checksums when maintainers refresh the binaries. Nothing is downloaded at sandbox startup.
 
-The packaging-only Containerfile uses `node:22.22.0-bookworm`, not the slim variant. Its Debian/glibc base already supplies Bash, Git, curl, CA roots, Node and the UID 1000 `node` user. No `RUN` steps execute. The preparation script contains the pinned upstream release URLs and checksums; the base uses a version tag, not an immutable digest.
+The packaging-only Containerfile uses `golang:1.26.2-trixie`. Its Debian/glibc base supplies Go, Bash, Git, curl and CA roots; the image names UID 1000 `agent`. Pi is a standalone binary. No `RUN` steps execute, and the base uses a version tag, not an immutable digest.
 
 The build uses Podplane's local image cache and does not need a running cluster. `podplane deps download` caches platform dependencies, **not this workshop image**. Preparing both avoids large downloads during the exercises. Use a current Podplane release with native `--docker=false` support; a rejected flag means the CLI must be upgraded, not that Docker is required.
 
@@ -94,9 +95,13 @@ For Part 3, bring an **OpenAI or Anthropic API key with API billing enabled**; a
 
 ## What the boundaries do
 
-The sandbox has its own persistent workspace, resource limits, a non-root process and a gVisor runtime. Network policies restrict it to DNS, Agent Router and Source Gateway. Provider keys belong to the router; Git access uses a short-lived, repository-scoped workload identity at Source Gateway.
+Parts 2–4 give the sandbox its own persistent workspace, resource limits, a non-root process and a gVisor runtime. Network policies allow DNS, Agent Router, Source Gateway and the local inference port on the laptop. Provider keys belong to the router; Git access uses a short-lived, repository-scoped workload identity at Source Gateway.
 
-This is a local learning environment, not a production security certification. Cluster administrators remain trusted. The inference listener is internal HTTP with network-based access control, not per-agent authentication or TLS. DNS remains an allowed channel, and permitted inference requests can contain workspace data. The Source Gateway token is readable by the agent; it is not an upstream GitHub token. A future Part 5 may explore nono to restrict the agent process further; current gVisor does not expose the Landlock support that requires.
+Part 5 switches the sandbox to runc so nono can use Landlock. Pi and its descendants get restricted filesystem access and inference through nono's local proxy. The tenant's inference route requires a verified workload identity from namespace `workshop`; nono presents the certificate while its private key remains outside Pi's filesystem grants. This replaces gVisor rather than layering inside it. The shared listener and other tenants' routes are unchanged.
+
+nono restricts Pi and its child processes. A shell opened with `podplane shell` runs outside nono’s restrictions and can read the workload private key.
+
+Inference uses server-authenticated HTTPS before Part 5 and mTLS afterwards. Permitted inference requests can contain workspace data. The Source Gateway token is readable by ordinary Pi in Part 4, but denied by the Part 5 profile; it is never an upstream GitHub token. nono loads certificates at startup, so sessions must be restarted to pick up rotated credentials.
 
 The local cluster still stops working when your laptop sleeps. Keeping agents independent of your laptop requires remote execution.
 
@@ -108,7 +113,7 @@ To pause the local VM and keep the workspace:
 podplane local stop
 ```
 
-Resume with `podplane local start --memory 5G`. To remove the workshop resources while the cluster is running:
+Resume with `podplane local start --memory 5G`. Remove the workshop resources while the cluster is running:
 
 ```sh
 helm uninstall workshop-inference --namespace workshop-inference --ignore-not-found

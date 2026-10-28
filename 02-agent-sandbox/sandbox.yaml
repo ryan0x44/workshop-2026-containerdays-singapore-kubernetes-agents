@@ -109,6 +109,9 @@ spec:
             - name: workload-trust
               mountPath: /var/run/podplane/trust
               readOnly: true
+            - name: workload-identity
+              mountPath: /var/run/podplane/identity
+              readOnly: true
       volumes:
         - name: workspace
           persistentVolumeClaim:
@@ -136,3 +139,12 @@ spec:
               - clusterTrustBundle:
                   name: certificates.podplane.dev:workload:roots
                   path: ca.crt
+        - name: workload-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - podCertificate:
+                  signerName: certificates.podplane.dev/workload
+                  keyType: ECDSAP256
+                  keyPath: tls.key
+                  certificateChainPath: tls.crt

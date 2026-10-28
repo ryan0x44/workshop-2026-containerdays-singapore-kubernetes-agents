@@ -1,0 +1,14 @@
+# JSON Patch for the tenant's AIGatewayRoute, not the shared Gateway listener.
+# Replace the model-only match: both headers must match the same request.
+- op: replace
+  path: /spec/rules/0/matches
+  value:
+    - headers:
+        - type: Exact
+          name: x-ai-eg-model
+          value: podplane-workshop-example-model
+        - type: RegularExpression
+          name: x-forwarded-client-cert
+          # Envoy supplies this header from a certificate verified by the workload CA.
+          # Match a complete URI field, allowing any ServiceAccount in workshop.
+          value: '(^|.*;)URI=spiffe://[^/;,]+/ns/workshop/sa/[a-z0-9.-]+(;.*|$)'
